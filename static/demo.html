@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASD Detection</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<script> 
+
+    function edit(file_path) {
+        return file_path.replace("C:\fakepath", "");
+    }
+
+    window.addEventListener("DOMContentLoaded", (event) => {
+        let current_file_path = undefined; 
+
+        const submit_btn = document.getElementsByClassName("submit-btn")[0];
+        const file_upload_btn = document.getElementById("formFile"); 
+        const h2_item = document.getElementById("output"); 
+
+        file_upload_btn.addEventListener("input", (e) => {
+            current_file_path = file_upload_btn.files[0].name;
+            const hasAdded = document.getElementById("video-display") != undefined; 
+            if (!hasAdded) {
+                const video_display = document.createElement("video"); 
+                video_display.id = "video-display"; 
+                // video_display.width = "400"; 
+                // video_display.height = "400"; 
+                video_display.controls = "controls";
+                video_display.classList.add("video-display");
+                
+                for (style of ['mt-3', 'overflow-hidden', 'w-50']) {
+                    video_display.classList.add(style);
+                }
+
+                video_display.setAttribute('src', `../videos/${current_file_path}`);
+                video_display.autoplay = "autoplay";
+
+                document.getElementById("video-container").appendChild(video_display);
+            }
+
+
+            else {
+            
+                const video_display = document.getElementById("video-display"); 
+                video_display.pause();
+                video_display.setAttribute('src', `../videos/${current_file_path}`);
+                video_display.load();
+                video_display.play();
+            }
+        }); 
+        
+
+        submit_btn.addEventListener("click", (e) => {
+            e.preventDefault(); 
+
+            fetch("/predict", {
+                method: "POST", 
+                headers: {
+                    "Content-Type": "application/json"
+                }, 
+                body: JSON.stringify({
+                    "file": edit(current_file_path)
+                })
+            }).then(resp => resp.json()).then(response => {
+                const {confidence, prediction, time} = response; 
+                h2_item.innerText = `Prediction: ${prediction} with confidence of ${confidence} in ${time} seconds.`;
+            });
+        }); 
+
+    }); 
+
+</script> 
+<body>
+    <div class="text-center mt-3">
+        <h1 id="title"> ASD Detection </h1>
+        <p id="description"> Simple Demo of the Model </p>
+    </div>
+
+    <!-- bootstrap, file upload folder -->
+    <div class="upload-section d-flex justify-content-center">
+        <input class="form-control w-75" type="file" name="file" id="formFile"> <!-- file upload button -->
+        <button type="button" class="btn btn-primary submit-btn">Predict</button> <!-- submit button-->
+    </div>
+
+    <div id="video-container" class="text-center"> </div>
+    
+    <h2 id="output" class="text-center mt-4"> Prediction: None </h2>
+</body>
+
+<style> 
+
+.video-display {
+    border-radius: 20px;
+}
+
+</style> 
+</html>
